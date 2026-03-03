@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta author="Olivier Michałowski 3G">
     <title>Ankieta Dni Otwarte</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
         .container { max-width: 500px; margin: auto; background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         
-        /* Gwiazdki */
         .stars { font-size: 50px; color: #475569; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
         .stars span.active { color: #fbbf24; }
         .stars span:hover { transform: scale(1.2); display: inline-block; }
@@ -21,12 +21,10 @@
         button:hover { background: #2563eb; }
         button:disabled { background: #64748b; cursor: not-allowed; }
 
-        /* Statystyki */
         .stats { margin-top: 40px; border-top: 1px solid #334155; padding-top: 20px; }
         #srednia { font-size: 70px; font-weight: 800; color: #3b82f6; margin: 5px 0; }
         #total-votes { color: #94a3b8; margin-bottom: 20px; }
         
-        /* Komentarze */
         #comments-list { text-align: left; }
         .comment { background: #334155; padding: 12px; margin: 10px 0; border-radius: 8px; font-size: 14px; border-left: 4px solid #3b82f6; animation: fadeIn 0.5s ease; }
         
@@ -54,16 +52,14 @@
 </div>
 
 <script>
-    // TWOJA KONFIGURACJA
+
     const SUPABASE_URL = 'https://jkkzttutnglikjmayylf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_Od6u_x6DIdKUdQOuqRalcw_dtAzhCuy';
     
-    // Inicjalizacja (zmieniona nazwa, by uniknąć konfliktu z biblioteką)
     const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentRating = 0;
 
-    // Obsługa wybierania gwiazdek
     function setRating(n) {
         currentRating = n;
         const stars = document.querySelectorAll('.stars span');
@@ -73,7 +69,6 @@
         });
     }
 
-    // Wysyłanie do bazy
     async function saveVote() {
         if (currentRating === 0) return alert("Wybierz gwiazdki!");
         
@@ -94,14 +89,13 @@
             alert("Dzięki za głos!");
             document.getElementById('user-comment').value = '';
             setRating(0);
-            loadData(); // Odśwież natychmiast po dodaniu
+            loadData(); 
         }
         
         btn.disabled = false;
         btn.innerText = "Wyślij głos";
     }
 
-    // Pobieranie i liczenie średniej
     async function loadData() {
         const { data, error } = await sbClient
             .from('opinie')
@@ -120,7 +114,6 @@
             document.getElementById('srednia').innerText = avg;
             document.getElementById('total-votes').innerText = `Głosów: ${count}`;
             
-            // Wyświetl tylko 3 ostatnie komentarze, które nie są puste
             const commentsHtml = data
                 .filter(i => i.komentarz && i.komentarz.trim() !== "")
                 .slice(0, 3)
@@ -131,10 +124,9 @@
         }
     }
 
-    // Automatyczne odświeżanie co 5 sekund (idealne na rzutnik)
+
     setInterval(loadData, 5000);
-    
-    // Załaduj dane przy starcie strony
+
     window.onload = loadData;
 </script>
 
