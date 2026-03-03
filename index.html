@@ -8,25 +8,42 @@
     <style>
         body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; }
         .container { max-width: 500px; margin: auto; background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .stars { font-size: 40px; color: #64748b; cursor: pointer; transition: 0.2s; }
+        
+        /* Gwiazdki */
+        .stars { font-size: 50px; color: #475569; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
         .stars span.active { color: #fbbf24; }
-        input { width: 100%; padding: 12px; margin: 20px 0; border-radius: 8px; border: none; background: #334155; color: white; box-sizing: border-box; }
-        button { background: #3b82f6; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        .stars span:hover { transform: scale(1.2); display: inline-block; }
+
+        input { width: 100%; padding: 12px; margin: 20px 0; border-radius: 8px; border: none; background: #334155; color: white; box-sizing: border-box; outline: none; }
+        input:focus { ring: 2px solid #3b82f6; }
+        
+        button { background: #3b82f6; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.3s; }
+        button:hover { background: #2563eb; }
+        button:disabled { background: #64748b; cursor: not-allowed; }
+
+        /* Statystyki */
         .stats { margin-top: 40px; border-top: 1px solid #334155; padding-top: 20px; }
-        #srednia { font-size: 60px; font-weight: 800; color: #3b82f6; margin: 10px 0; }
-        .comment { background: #334155; padding: 10px; margin: 10px 0; border-radius: 8px; text-align: left; font-size: 14px; animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #srednia { font-size: 70px; font-weight: 800; color: #3b82f6; margin: 5px 0; }
+        #total-votes { color: #94a3b8; margin-bottom: 20px; }
+        
+        /* Komentarze */
+        #comments-list { text-align: left; }
+        .comment { background: #334155; padding: 12px; margin: 10px 0; border-radius: 8px; font-size: 14px; border-left: 4px solid #3b82f6; animation: fadeIn 0.5s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>Jak Ci się podoba?</h2>
+    
     <div class="stars" id="star-rating">
         <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
     </div>
-    <input type="text" id="user-comment" placeholder="Dodaj krótki komentarz...">
-    <button onclick="saveVote()">Wyślij głos</button>
+    
+    <input type="text" id="user-comment" placeholder="Napisz coś od siebie (opcjonalnie)...">
+    <button id="send-btn" onclick="saveVote()">Wyślij głos</button>
 
     <div class="stats">
         <p>Średnia ocena:</p>
@@ -37,48 +54,88 @@
 </div>
 
 <script>
+    // TWOJA KONFIGURACJA
     const SUPABASE_URL = 'https://jkkzttutnglikjmayylf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_Od6u_x6DIdKUdQOuqRalcw_dtAzhCuy';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // Inicjalizacja (zmieniona nazwa, by uniknąć konfliktu z biblioteką)
+    const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentRating = 0;
 
+    // Obsługa wybierania gwiazdek
     function setRating(n) {
         currentRating = n;
         const stars = document.querySelectorAll('.stars span');
-        stars.forEach((s, i) => s.classList.toggle('active', i < n));
+        stars.forEach((s, i) => {
+            if (i < n) s.classList.add('active');
+            else s.classList.remove('active');
+        });
     }
 
+    // Wysyłanie do bazy
     async function saveVote() {
-        if(currentRating === 0) return alert("Wybierz gwiazdki!");
+        if (currentRating === 0) return alert("Wybierz gwiazdki!");
+        
+        const btn = document.getElementById('send-btn');
         const comm = document.getElementById('user-comment').value;
 
-        const { error } = await supabase.from('opinie').insert([{ gwiazdki: currentRating, komentarz: comm }]);
-        if(!error) {
-            alert("Dziękujemy!");
+        btn.disabled = true;
+        btn.innerText = "Wysyłanie...";
+
+        const { error } = await sbClient
+            .from('opinie')
+            .insert([{ gwiazdki: currentRating, komentarz: comm }]);
+
+        if (error) {
+            alert("Błąd bazy danych! Sprawdź czy tabela 'opinie' istnieje i ma wyłączone RLS.");
+            console.error(error);
+        } else {
+            alert("Dzięki za głos!");
             document.getElementById('user-comment').value = '';
             setRating(0);
-            loadData();
+            loadData(); // Odśwież natychmiast po dodaniu
         }
+        
+        btn.disabled = false;
+        btn.innerText = "Wyślij głos";
     }
 
+    // Pobieranie i liczenie średniej
     async function loadData() {
-        const { data, error } = await supabase.from('opinie').select('*').order('created_at', { ascending: false });
-        if(data) {
+        const { data, error } = await sbClient
+            .from('opinie')
+            .select('*')
+            .order('id', { ascending: false });
+
+        if (error) {
+            console.error("Błąd pobierania:", error);
+            return;
+        }
+
+        if (data) {
             const count = data.length;
             const avg = count > 0 ? (data.reduce((acc, item) => acc + item.gwiazdki, 0) / count).toFixed(1) : "0.0";
             
             document.getElementById('srednia').innerText = avg;
             document.getElementById('total-votes').innerText = `Głosów: ${count}`;
             
-            const commentsHtml = data.slice(0, 3).map(i => i.komentarz ? `<div class="comment">${i.komentarz}</div>` : '').join('');
+            // Wyświetl tylko 3 ostatnie komentarze, które nie są puste
+            const commentsHtml = data
+                .filter(i => i.komentarz && i.komentarz.trim() !== "")
+                .slice(0, 3)
+                .map(i => `<div class="comment">${i.komentarz}</div>`)
+                .join('');
+            
             document.getElementById('comments-list').innerHTML = commentsHtml;
         }
     }
 
-    // Odświeżaj dane co 5 sekund automatycznie
+    // Automatyczne odświeżanie co 5 sekund (idealne na rzutnik)
     setInterval(loadData, 5000);
-    loadData();
+    
+    // Załaduj dane przy starcie strony
+    window.onload = loadData;
 </script>
 
 </body>
