@@ -27,6 +27,7 @@
         
         #comments-list { text-align: left; }
         .comment { background: #334155; padding: 12px; margin: 10px 0; border-radius: 8px; font-size: 14px; border-left: 4px solid #3b82f6; animation: fadeIn 0.5s ease; }
+        .comment-stars { color: #fbbf24; font-size: 12px; margin-bottom: 5px; letter-spacing: 2px; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -52,10 +53,8 @@
 </div>
 
 <script>
-
     const SUPABASE_URL = 'https://jkkzttutnglikjmayylf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_Od6u_x6DIdKUdQOuqRalcw_dtAzhCuy';
-    
     const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentRating = 0;
@@ -71,7 +70,6 @@
 
     async function saveVote() {
         if (currentRating === 0) return alert("Wybierz gwiazdki!");
-        
         const btn = document.getElementById('send-btn');
         const comm = document.getElementById('user-comment').value;
 
@@ -83,7 +81,7 @@
             .insert([{ gwiazdki: currentRating, komentarz: comm }]);
 
         if (error) {
-            alert("Błąd bazy danych! Sprawdź czy tabela 'opinie' istnieje i ma wyłączone RLS.");
+            alert("Błąd bazy danych!");
             console.error(error);
         } else {
             alert("Dzięki za głos!");
@@ -91,7 +89,6 @@
             setRating(0);
             loadData(); 
         }
-        
         btn.disabled = false;
         btn.innerText = "Wyślij głos";
     }
@@ -116,17 +113,23 @@
             
             const commentsHtml = data
                 .filter(i => i.komentarz && i.komentarz.trim() !== "")
-                .slice(0, 3)
-                .map(i => `<div class="comment">${i.komentarz}</div>`)
+                .slice(0, 5)
+                .map(i => {
+                    const starsLine = '★'.repeat(i.gwiazdki) + '☆'.repeat(5 - i.gwiazdki);
+                    return `
+                        <div class="comment">
+                            <div class="comment-stars">${starsLine}</div>
+                            ${i.komentarz}
+                        </div>
+                    `;
+                })
                 .join('');
             
             document.getElementById('comments-list').innerHTML = commentsHtml;
         }
     }
 
-
     setInterval(loadData, 5000);
-
     window.onload = loadData;
 </script>
 
