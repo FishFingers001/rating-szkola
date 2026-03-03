@@ -26,8 +26,8 @@
         #total-votes { color: #94a3b8; margin-bottom: 20px; }
         
         #comments-list { text-align: left; }
-        .comment { background: #334155; padding: 12px; margin: 10px 0; border-radius: 8px; font-size: 14px; border-left: 4px solid #3b82f6; animation: fadeIn 0.5s ease; justify: space-between;}
-        .comment-stars { color: #fbbf24; font-size: 12px; margin-bottom: 5px; letter-spacing: 2px; text-align: right;}
+        .comment { background: #334155; padding: 12px; margin: 10px 0; border-radius: 8px; font-size: 14px; border-left: 4px solid #3b82f6; animation: fadeIn 0.5s ease; }
+        .comment-stars { color: #fbbf24; font-size: 20px; margin-bottom: 5px; letter-spacing: 2px;}
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -118,8 +118,8 @@
                     const starsLine = '★'.repeat(i.gwiazdki) + '☆'.repeat(5 - i.gwiazdki);
                     return `
                         <div class="comment">
+                            <div class="comment-stars">${starsLine}</div>
                             ${i.komentarz}
-                            <span class="comment-stars">${starsLine}</div>
                         </div>
                     `;
                 })
